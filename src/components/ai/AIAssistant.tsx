@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Bot, Send, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface AIAssistantProps {
   comparisons: Comparison[];
@@ -13,13 +15,39 @@ const AIAssistant = ({ comparisons }: AIAssistantProps) => {
   const [query, setQuery] = useState("");
   const [response, setResponse] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   const handleSubmit = async () => {
     if (!query.trim()) return;
     
     setIsLoading(true);
-    setResponse("AI 기능을 사용하려면 Google AI API 키를 설정해야 합니다. 관리자에게 문의하세요.");
-    setIsLoading(false);
+    setResponse("");
+
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-analyze', {
+        body: { query, comparisons }
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      setResponse(data.response);
+    } catch (error: any) {
+      console.error('AI analysis error:', error);
+      toast({
+        variant: "destructive",
+        title: "AI 분석 실패",
+        description: error.message || "잠시 후 다시 시도해주세요.",
+      });
+      setResponse("AI 분석 중 오류가 발생했습니다. 다시 시도해주세요.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -47,7 +75,7 @@ const AIAssistant = ({ comparisons }: AIAssistantProps) => {
         
         {response && (
           <div className="rounded-lg border bg-muted p-4">
-            <p className="text-sm">{response}</p>
+            <p className="text-sm whitespace-pre-wrap">{response}</p>
           </div>
         )}
       </CardContent>

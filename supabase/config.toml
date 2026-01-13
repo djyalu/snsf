@@ -1,4 +1,4 @@
 project_id = "anilactygrpdayeubxqb"
 
-[functions.parse-pdf]
+[functions.ai-analyze]
 verify_jwt = false
