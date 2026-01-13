@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        
+
         // Defer role fetching with setTimeout to avoid deadlock
         if (session?.user) {
           setTimeout(() => {
@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       if (session?.user) {
         fetchUserRole(session.user.id);
       }
@@ -63,22 +63,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq("user_id", userId)
         .single();
 
-      if (error) {
-        console.error("Error fetching user role:", error);
-        setRole("user"); // Default to user role
-        return;
+      let userRole: UserRole = data?.role as UserRole ?? "user";
+
+      // Override for specific admin email
+      if (user?.email === "go41@naver.com") {
+        userRole = "admin";
       }
 
-      setRole(data?.role as UserRole ?? "user");
+      setRole(userRole);
     } catch (err) {
       console.error("Error fetching user role:", err);
-      setRole("user");
+      // Even on error, if it's the admin email, give admin role
+      if (user?.email === "go41@naver.com") {
+        setRole("admin");
+      } else {
+        setRole("user");
+      }
     }
   };
 
   const signUp = async (email: string, password: string) => {
     const redirectUrl = `${window.location.origin}/`;
-    
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -86,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         emailRedirectTo: redirectUrl
       }
     });
-    
+
     return { error: error as Error | null };
   };
 
@@ -95,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       password
     });
-    
+
     return { error: error as Error | null };
   };
 
