@@ -366,71 +366,71 @@ const Admin = () => {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">관리자 대시보드</h1>
-          <p className="text-muted-foreground">비교 데이터를 관리하고 업로드하세요</p>
+          <h1 className="text-xl sm:text-3xl font-bold">관리자 대시보드</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">비교 데이터를 관리하고 업로드하세요</p>
         </div>
 
         {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-3 sm:gap-4 grid-cols-3">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">전체 항목</CardTitle>
-              <Database className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 p-3 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium">전체 항목</CardTitle>
+              <Database className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
-              <p className="text-xs text-muted-foreground">등록된 비교 항목</p>
+            <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+              <div className="text-lg sm:text-2xl font-bold">{stats.total}</div>
+              <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">등록된 비교 항목</p>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">카테고리</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 p-3 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium">카테고리</CardTitle>
+              <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.categories.length}</div>
-              <p className="text-xs text-muted-foreground">분류된 카테고리</p>
+            <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+              <div className="text-lg sm:text-2xl font-bold">{stats.categories.length}</div>
+              <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">분류된 카테고리</p>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">진행률</CardTitle>
-              <Upload className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 p-3 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium">진행률</CardTitle>
+              <Upload className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{Math.round((stats.total / 1000) * 100)}%</div>
-              <p className="text-xs text-muted-foreground">1000개 목표 대비</p>
+            <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+              <div className="text-lg sm:text-2xl font-bold">{Math.round((stats.total / 1000) * 100)}%</div>
+              <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">1000개 목표 대비</p>
             </CardContent>
           </Card>
         </div>
 
-        <Tabs defaultValue="upload" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="upload">데이터 업로드</TabsTrigger>
-            <TabsTrigger value="manage">데이터 관리</TabsTrigger>
-            <TabsTrigger value="categories">카테고리 현황</TabsTrigger>
+        <Tabs defaultValue="upload" className="space-y-3 sm:space-y-4">
+          <TabsList className="w-full sm:w-auto flex">
+            <TabsTrigger value="upload" className="flex-1 sm:flex-none text-xs sm:text-sm">업로드</TabsTrigger>
+            <TabsTrigger value="manage" className="flex-1 sm:flex-none text-xs sm:text-sm">관리</TabsTrigger>
+            <TabsTrigger value="categories" className="flex-1 sm:flex-none text-xs sm:text-sm">카테고리</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="upload" className="space-y-4">
+          <TabsContent value="upload" className="space-y-3 sm:space-y-4">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Upload className="h-5 w-5" />
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <Upload className="h-4 w-4 sm:h-5 sm:w-5" />
                   데이터 업로드
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-xs sm:text-sm">
                   텍스트 파일을 업로드하여 비교 데이터를 일괄 추가합니다
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="rounded-lg border-2 border-dashed p-6 text-center">
-                  <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <div className="mt-4">
+              <CardContent className="space-y-3 sm:space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
+                <div className="rounded-lg border-2 border-dashed p-4 sm:p-6 text-center">
+                  <Upload className="mx-auto h-8 w-8 sm:h-12 sm:w-12 text-muted-foreground" />
+                  <div className="mt-3 sm:mt-4">
                     <Label htmlFor="file-upload" className="cursor-pointer">
-                      <span className="text-primary hover:underline">파일 선택</span>
-                      <span className="text-muted-foreground"> 또는 드래그 앤 드롭</span>
+                      <span className="text-primary hover:underline text-sm sm:text-base">파일 선택</span>
+                      <span className="text-muted-foreground text-sm sm:text-base hidden sm:inline"> 또는 드래그 앤 드롭</span>
                     </Label>
                     <Input
                       id="file-upload"
@@ -441,28 +441,28 @@ const Admin = () => {
                       disabled={isUploading}
                     />
                   </div>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    .txt, .csv 또는 .pdf 파일 (파이프 | 구분자 포함)
+                  <p className="mt-2 text-xs sm:text-sm text-muted-foreground">
+                    .txt, .csv, .pdf 파일
                   </p>
                 </div>
 
                 {isUploading && (
-                  <div className="flex items-center justify-center gap-2 text-primary">
+                  <div className="flex items-center justify-center gap-2 text-primary text-sm">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <span>파일 처리 중...</span>
                   </div>
                 )}
 
-                <div className="rounded-lg bg-muted p-4">
-                  <h4 className="font-medium">파일 형식 안내</h4>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    각 줄은 파이프(|)로 구분된 6개 필드로 구성:
+                <div className="rounded-lg bg-muted p-3 sm:p-4">
+                  <h4 className="font-medium text-sm sm:text-base">파일 형식 안내</h4>
+                  <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+                    파이프(|)로 구분된 6개 필드로 구성
                   </p>
-                  <code className="mt-2 block rounded bg-background p-2 text-xs">
-                    번호|카테고리|비교항목|Salesforce특징|ServiceNow특징|출처
+                  <code className="mt-2 block rounded bg-background p-2 text-[10px] sm:text-xs overflow-x-auto">
+                    번호|카테고리|비교항목|SF특징|SN특징|출처
                   </code>
-                  <Button variant="outline" size="sm" className="mt-3" onClick={downloadTemplate}>
-                    <Download className="mr-2 h-4 w-4" />
+                  <Button variant="outline" size="sm" className="mt-3 text-xs sm:text-sm h-8" onClick={downloadTemplate}>
+                    <Download className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     템플릿 다운로드
                   </Button>
                 </div>
@@ -470,82 +470,87 @@ const Admin = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="manage" className="space-y-4">
+          <TabsContent value="manage" className="space-y-3 sm:space-y-4">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
+              <CardHeader className="p-4 sm:p-6 space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <CardTitle>데이터 관리</CardTitle>
-                  <CardDescription>등록된 비교 항목을 검색하고 관리합니다</CardDescription>
+                  <CardTitle className="text-base sm:text-lg">데이터 관리</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">등록된 비교 항목을 검색하고 관리합니다</CardDescription>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="relative w-72">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4">
+                  <div className="relative">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="번호, 카테고리, 항목 검색..."
+                      placeholder="검색..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-8"
+                      className="pl-8 w-full sm:w-72 h-9"
                     />
                   </div>
                   <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button>
-                        <Plus className="mr-2 h-4 w-4" />
-                        항목 추가
+                      <Button size="sm" className="h-9">
+                        <Plus className="mr-1.5 h-4 w-4" />
+                        <span className="sm:inline">추가</span>
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-2xl">
+                    <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                       <DialogHeader>
-                        <DialogTitle>새 비교 항목 추가</DialogTitle>
-                        <DialogDescription>
+                        <DialogTitle className="text-base sm:text-lg">새 비교 항목 추가</DialogTitle>
+                        <DialogDescription className="text-xs sm:text-sm">
                           ServiceNow와 Salesforce 비교 항목을 추가합니다
                         </DialogDescription>
                       </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label>번호</Label>
+                      <div className="grid gap-3 sm:gap-4 py-3 sm:py-4">
+                        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                          <div className="space-y-1.5 sm:space-y-2">
+                            <Label className="text-xs sm:text-sm">번호</Label>
                             <Input
                               type="number"
                               value={newItem.item_number || ""}
                               onChange={(e) => setNewItem({ ...newItem, item_number: parseInt(e.target.value) || 0 })}
+                              className="h-9"
                             />
                           </div>
-                          <div className="space-y-2">
-                            <Label>카테고리</Label>
+                          <div className="space-y-1.5 sm:space-y-2">
+                            <Label className="text-xs sm:text-sm">카테고리</Label>
                             <Input
                               value={newItem.category}
                               onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
-                              placeholder="예: Architecture & Infrastructure"
+                              placeholder="카테고리"
+                              className="h-9"
                             />
                           </div>
                         </div>
-                        <div className="space-y-2">
-                          <Label>비교 항목</Label>
+                        <div className="space-y-1.5 sm:space-y-2">
+                          <Label className="text-xs sm:text-sm">비교 항목</Label>
                           <Input
                             value={newItem.comparison_item}
                             onChange={(e) => setNewItem({ ...newItem, comparison_item: e.target.value })}
                             placeholder="예: 코어 아키텍처"
+                            className="h-9"
                           />
                         </div>
-                        <div className="space-y-2">
-                          <Label>Salesforce 특징</Label>
+                        <div className="space-y-1.5 sm:space-y-2">
+                          <Label className="text-xs sm:text-sm">Salesforce 특징</Label>
                           <Textarea
                             value={newItem.salesforce_feature}
                             onChange={(e) => setNewItem({ ...newItem, salesforce_feature: e.target.value })}
-                            rows={3}
+                            rows={2}
+                            className="text-sm"
                           />
                         </div>
-                        <div className="space-y-2">
-                          <Label>ServiceNow 특징</Label>
+                        <div className="space-y-1.5 sm:space-y-2">
+                          <Label className="text-xs sm:text-sm">ServiceNow 특징</Label>
                           <Textarea
                             value={newItem.servicenow_feature}
                             onChange={(e) => setNewItem({ ...newItem, servicenow_feature: e.target.value })}
-                            rows={3}
+                            rows={2}
+                            className="text-sm"
                           />
                         </div>
-                        <div className="space-y-2">
-                          <Label>출처</Label>
+                        <div className="space-y-1.5 sm:space-y-2">
+                          <Label className="text-xs sm:text-sm">출처</Label>
                           <Input
                             value={newItem.source}
                             onChange={(e) => setNewItem({ ...newItem, source: e.target.value })}

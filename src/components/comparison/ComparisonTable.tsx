@@ -41,7 +41,47 @@ const ComparisonTable = ({ comparisons }: ComparisonTableProps) => {
 
   return (
     <>
-      <ScrollArea className="h-[600px]">
+      {/* Mobile Card View */}
+      <div className="block md:hidden space-y-3">
+        {comparisons.map((comparison) => (
+          <div
+            key={comparison.id}
+            className="rounded-lg border p-4 space-y-3"
+            onClick={() => setSelectedItem(comparison)}
+          >
+            <div className="flex items-center justify-between">
+              <Badge variant="outline" className="text-xs">
+                {comparison.category}
+              </Badge>
+              <span className="text-xs text-muted-foreground">#{comparison.item_number}</span>
+            </div>
+            <h4 className="font-medium text-sm">{comparison.comparison_item}</h4>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded bg-salesforce-light/50 p-2">
+                <div className="flex items-center gap-1 mb-1">
+                  <div className="h-2 w-2 rounded-full bg-salesforce"></div>
+                  <span className="text-[10px] font-medium">Salesforce</span>
+                </div>
+                <p className="text-xs line-clamp-2 text-muted-foreground">
+                  {comparison.salesforce_feature}
+                </p>
+              </div>
+              <div className="rounded bg-servicenow-light/50 p-2">
+                <div className="flex items-center gap-1 mb-1">
+                  <div className="h-2 w-2 rounded-full bg-servicenow"></div>
+                  <span className="text-[10px] font-medium">ServiceNow</span>
+                </div>
+                <p className="text-xs line-clamp-2 text-muted-foreground">
+                  {comparison.servicenow_feature}
+                </p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop Table View */}
+      <ScrollArea className="h-[600px] hidden md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -103,7 +143,7 @@ const ComparisonTable = ({ comparisons }: ComparisonTableProps) => {
       </ScrollArea>
 
       <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-[95vw] sm:max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex items-center gap-2">
               <Badge variant="outline">{selectedItem?.category}</Badge>
@@ -111,28 +151,28 @@ const ComparisonTable = ({ comparisons }: ComparisonTableProps) => {
                 #{selectedItem?.item_number}
               </span>
             </div>
-            <DialogTitle className="text-xl">
+            <DialogTitle className="text-lg sm:text-xl">
               {selectedItem?.comparison_item}
             </DialogTitle>
             <DialogDescription>상세 비교 내용</DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-lg border bg-salesforce-light p-4">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+            <div className="rounded-lg border bg-salesforce-light p-3 sm:p-4">
               <div className="mb-2 flex items-center gap-2">
                 <div className="h-3 w-3 rounded-full bg-salesforce"></div>
-                <h4 className="font-semibold">Salesforce</h4>
+                <h4 className="font-semibold text-sm sm:text-base">Salesforce</h4>
               </div>
-              <p className="text-sm leading-relaxed">
+              <p className="text-xs sm:text-sm leading-relaxed">
                 {selectedItem?.salesforce_feature}
               </p>
             </div>
-            <div className="rounded-lg border bg-servicenow-light p-4">
+            <div className="rounded-lg border bg-servicenow-light p-3 sm:p-4">
               <div className="mb-2 flex items-center gap-2">
                 <div className="h-3 w-3 rounded-full bg-servicenow"></div>
-                <h4 className="font-semibold">ServiceNow</h4>
+                <h4 className="font-semibold text-sm sm:text-base">ServiceNow</h4>
               </div>
-              <p className="text-sm leading-relaxed">
+              <p className="text-xs sm:text-sm leading-relaxed">
                 {selectedItem?.servicenow_feature}
               </p>
             </div>
