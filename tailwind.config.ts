@@ -47,6 +47,16 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        servicenow: {
+          DEFAULT: "hsl(var(--servicenow))",
+          foreground: "hsl(var(--servicenow-foreground))",
+          light: "hsl(var(--servicenow-light))",
+        },
+        salesforce: {
+          DEFAULT: "hsl(var(--salesforce))",
+          foreground: "hsl(var(--salesforce-foreground))",
+          light: "hsl(var(--salesforce-light))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
