@@ -116,7 +116,7 @@ const Admin = () => {
       formData.append('file', file);
 
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (!session) {
         throw new Error('로그인이 필요합니다');
       }
@@ -297,14 +297,14 @@ const Admin = () => {
                     <Input
                       id="file-upload"
                       type="file"
-                      accept=".txt,.csv"
+                      accept=".txt,.csv,.pdf"
                       className="hidden"
                       onChange={handleFileUpload}
                       disabled={isUploading}
                     />
                   </div>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    .txt 또는 .csv 파일 (파이프 | 구분자)
+                    .txt, .csv 또는 .pdf 파일 (파이프 | 구분자 포함)
                   </p>
                 </div>
 

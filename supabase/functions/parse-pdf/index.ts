@@ -1,5 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// @ts-ignore: pdf-parse is an npm package
+import pdf from "npm:pdf-parse/lib/pdf-parse.js";
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -31,7 +34,7 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    
+
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } }
     });
@@ -63,7 +66,7 @@ Deno.serve(async (req) => {
     // Parse form data with PDF file
     const formData = await req.formData();
     const file = formData.get('file') as File;
-    
+
     if (!file) {
       return new Response(
         JSON.stringify({ error: 'No file provided' }),
@@ -71,29 +74,45 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Processing PDF: ${file.name}, size: ${file.size} bytes`);
+    console.log(`Processing file: ${file.name}, type: ${file.type}, size: ${file.size} bytes`);
 
-    // Read file as text (for now, expect a structured text/CSV format)
-    // In production, you would use a PDF parsing library
-    const text = await file.text();
-    
+    let text = '';
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+
+    if (isPdf) {
+      console.log('Detected PDF file, extracting text...');
+      const arrayBuffer = await file.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+      // pdf-parse expects a Buffer or Uint8Array
+      try {
+        const data = await pdf(uint8Array);
+        text = data.text;
+        console.log(`Successfully extracted ${text.length} characters from PDF`);
+      } catch (pdfError) {
+        console.error('PDF extraction error:', pdfError);
+        throw new Error(`PDF 파싱 실패: ${pdfError.message}`);
+      }
+    } else {
+      text = await file.text();
+    }
+
     // Parse the data - expecting a specific format
     // Format: Each line is: number|category|comparison_item|salesforce|servicenow|source
     const lines = text.split('\n').filter(line => line.trim());
     const items: ComparisonItem[] = [];
-    const errors: string[] = [];
+    const parseErrors: string[] = [];
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line || line.startsWith('#')) continue; // Skip empty lines and comments
 
       const parts = line.split('|').map(p => p.trim());
-      
+
       if (parts.length >= 5) {
         const itemNumber = parseInt(parts[0], 10);
-        
+
         if (isNaN(itemNumber)) {
-          errors.push(`Line ${i + 1}: Invalid item number "${parts[0]}"`);
+          parseErrors.push(`Line ${i + 1}: Invalid item number "${parts[0]}"`);
           continue;
         }
 
@@ -106,15 +125,15 @@ Deno.serve(async (req) => {
           source: parts[5] || ''
         });
       } else if (parts.length > 1) {
-        errors.push(`Line ${i + 1}: Not enough fields (expected 5-6, got ${parts.length})`);
+        parseErrors.push(`Line ${i + 1}: Not enough fields (expected 5-6, got ${parts.length})`);
       }
     }
 
     if (items.length === 0) {
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: 'No valid items found in file',
-          details: errors.slice(0, 10),
+          details: parseErrors.slice(0, 10),
           hint: 'Expected format: number|category|comparison_item|salesforce_feature|servicenow_feature|source'
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -177,7 +196,7 @@ Deno.serve(async (req) => {
         inserted,
         updated,
         total: items.length,
-        parseErrors: errors.slice(0, 10),
+        parseErrors: parseErrors.slice(0, 10),
         insertErrors: insertErrors.slice(0, 10)
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
