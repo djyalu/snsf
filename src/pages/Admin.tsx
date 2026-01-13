@@ -131,9 +131,21 @@ const Admin = () => {
 
       const result = response.data;
 
+      if (result.inserted === 0 && result.updated === 0) {
+        toast({
+          variant: "destructive",
+          title: "업로드 실패 또는 데이터 없음",
+          description: "유효한 데이터를 찾지 못했거나 처리에 실패했습니다. 파일 형식을 확인해주세요.",
+        });
+        if (result.parseErrors?.length > 0) {
+          console.error("Parse errors:", result.parseErrors);
+        }
+        return;
+      }
+
       toast({
         title: "업로드 성공",
-        description: result.message || `${result.inserted}개 추가, ${result.updated}개 업데이트됨`,
+        description: `${result.inserted}개 추가, ${result.updated}개 업데이트되었습니다.`,
       });
 
       // Refresh data

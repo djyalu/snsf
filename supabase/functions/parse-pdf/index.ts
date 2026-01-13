@@ -96,14 +96,15 @@ Deno.serve(async (req) => {
       text = await file.text();
     }
 
-    // Parse the data - expecting a specific format
-    // Format: Each line is: number|category|comparison_item|salesforce|servicenow|source
-    const lines = text.split('\n').filter(line => line.trim());
+    console.log(`Extracted text preview (first 200 chars): ${text.substring(0, 200)}`);
+
+    // Parse the data - handle different line endings and trim each line
+    const lines = text.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
     const items: ComparisonItem[] = [];
     const parseErrors: string[] = [];
 
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
+      const line = lines[i];
       if (!line || line.startsWith('#')) continue; // Skip empty lines and comments
 
       const parts = line.split('|').map(p => p.trim());
