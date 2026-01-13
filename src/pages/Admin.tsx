@@ -112,46 +112,79 @@ const Admin = () => {
     setIsUploading(true);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
+      let text = "";
 
-      const { data: { session } } = await supabase.auth.getSession();
+      if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
+        const arrayBuffer = await file.arrayBuffer();
 
-      if (!session) {
-        throw new Error('로그인이 필요합니다');
-      }
-
-      const response = await supabase.functions.invoke('parse-pdf', {
-        body: formData,
-      });
-
-      if (response.error) {
-        throw new Error(response.error.message || '업로드 실패');
-      }
-
-      const result = response.data;
-
-      if (result.inserted === 0 && result.updated === 0) {
-        toast({
-          variant: "destructive",
-          title: "업로드 실패 또는 데이터 없음",
-          description: "유효한 데이터를 찾지 못했거나 처리에 실패했습니다. 파일 형식을 확인해주세요.",
-        });
-        if (result.parseErrors?.length > 0) {
-          console.error("Parse errors:", result.parseErrors);
+        // 동적으로 PDF.js 로드
+        if (!(window as any).pdfjsLib) {
+          const script = document.createElement('script');
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+          document.head.appendChild(script);
+          await new Promise((resolve) => { script.onload = resolve; });
         }
-        return;
+
+        const pdfjsLib = (window as any)['pdfjs-dist/build/pdf'] || (window as any).pdfjsLib;
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+        const pdf = await loadingTask.promise;
+        let fullText = "";
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items.map((item: any) => item.str).join(" ");
+          fullText += pageText + "\n";
+        }
+        text = fullText;
+      } else {
+        text = await file.text();
+      }
+
+      // 텍스트 클리닝 및 파싱 로직
+      text = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, "");
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.includes("|"));
+
+      const items = [];
+      for (const line of lines) {
+        const parts = line.split("|").map(p => p.trim());
+        const numMatch = parts[0].match(/^\d+/);
+
+        if (numMatch && parts.length >= 5) {
+          items.push({
+            item_number: parseInt(numMatch[0], 10),
+            category: parts[1] || "General",
+            comparison_item: parts[2] || "",
+            salesforce_feature: parts[3] || "",
+            servicenow_feature: parts[4] || "",
+            source: parts[5] || ""
+          });
+        }
+      }
+
+      if (items.length === 0) {
+        throw new Error("유효한 비교 데이터를 찾을 수 없습니다. (번호|카테고리|... 형식 확인)");
+      }
+
+      // Supabase 직접 Upsert 실행
+      let successCount = 0;
+      for (const item of items) {
+        const { error } = await supabase
+          .from("comparisons")
+          .upsert(item, { onConflict: "item_number" });
+        if (!error) successCount++;
       }
 
       toast({
         title: "업로드 성공",
-        description: `${result.inserted}개 추가, ${result.updated}개 업데이트되었습니다.`,
+        description: `${successCount}개의 항목이 성공적으로 업데이트되었습니다.`,
       });
 
-      // Refresh data
       fetchData();
     } catch (error: any) {
-      console.error("Upload error:", error);
+      console.error("Upload error detail:", error);
       toast({
         variant: "destructive",
         title: "업로드 실패",
@@ -159,7 +192,6 @@ const Admin = () => {
       });
     } finally {
       setIsUploading(false);
-      // Reset file input
       event.target.value = '';
     }
   };
