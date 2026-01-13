@@ -83,7 +83,6 @@ Deno.serve(async (req) => {
       console.log('Detected PDF file, extracting text...');
       const arrayBuffer = await file.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
-      // pdf-parse expects a Buffer or Uint8Array
       try {
         const data = await pdf(uint8Array);
         text = data.text;
@@ -96,6 +95,9 @@ Deno.serve(async (req) => {
       text = await file.text();
     }
 
+    // 텍스트 클리닝: 비정상적인 바이너리 문자 및 제어 문자 제거
+    text = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, "");
+
     console.log(`Extracted text preview (first 200 chars): ${text.substring(0, 200)}`);
 
     // Parse the data - handle different line endings and trim each line
@@ -105,18 +107,24 @@ Deno.serve(async (req) => {
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      if (!line || line.startsWith('#')) continue; // Skip empty lines and comments
+      // 주석이거나 파이프가 아예 없는 줄은 무시 (노이즈 방지)
+      if (!line || line.startsWith('#') || !line.includes('|')) continue;
 
       const parts = line.split('|').map(p => p.trim());
 
-      if (parts.length >= 5) {
-        const itemNumber = parseInt(parts[0], 10);
-
-        if (isNaN(itemNumber)) {
-          parseErrors.push(`Line ${i + 1}: Invalid item number "${parts[0]}"`);
-          continue;
+      // 첫 번째 파트가 숫자로 시작하는지 확인 (기본적인 유효성 검사)
+      const itemNumberMatch = parts[0].match(/^\d+/);
+      if (!itemNumberMatch) {
+        // 노이즈가 심한 줄은 무시하고, 형식이 명확히 틀린 줄만 에러 기록
+        if (parts[0].length < 50 && !/[\uFFFD]/.test(parts[0])) {
+          parseErrors.push(`Line ${i + 1}: 항목 번호는 숫자로 시작해야 합니다 (값: "${parts[0].substring(0, 20)}")`);
         }
+        continue;
+      }
 
+      const itemNumber = parseInt(itemNumberMatch[0], 10);
+
+      if (parts.length >= 5) {
         items.push({
           item_number: itemNumber,
           category: parts[1] || 'General',
@@ -126,16 +134,16 @@ Deno.serve(async (req) => {
           source: parts[5] || ''
         });
       } else if (parts.length > 1) {
-        parseErrors.push(`Line ${i + 1}: Not enough fields (expected 5-6, got ${parts.length})`);
+        parseErrors.push(`Line ${i + 1}: 필드 부족 (예상: 5-6, 실제: ${parts.length})`);
       }
     }
 
     if (items.length === 0) {
       return new Response(
         JSON.stringify({
-          error: 'No valid items found in file',
+          error: '파일에서 유효한 데이터를 찾을 수 없습니다.',
           details: parseErrors.slice(0, 10),
-          hint: 'Expected format: number|category|comparison_item|salesforce_feature|servicenow_feature|source'
+          hint: '기대 형식: 번호|카테고리|비교항목|Salesforce특징|ServiceNow특징|출처'
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -203,8 +211,8 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+  } catch (error: any) {
+    const errorMessage = error.message || 'Internal server error';
     console.error('Error processing PDF:', error);
     return new Response(
       JSON.stringify({ error: errorMessage }),
