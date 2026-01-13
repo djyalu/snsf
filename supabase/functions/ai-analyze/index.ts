@@ -66,8 +66,12 @@ ${contextData}`;
     );
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Google AI API error:', errorText);
+      const errorData = await response.json();
+      console.error('Google AI API error:', JSON.stringify(errorData));
+      
+      if (response.status === 429) {
+        throw new Error('API 요청 한도 초과입니다. 30초 후 다시 시도해주세요.');
+      }
       throw new Error(`Google AI API error: ${response.status}`);
     }
 
