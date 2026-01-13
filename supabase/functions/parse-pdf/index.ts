@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Processing file: ${file.name}, type: ${file.type}, size: ${file.size} bytes`);
+    console.log(`[v2.1] Processing file: ${file.name}, type: ${file.type}, size: ${file.size} bytes`);
 
     let text = '';
     const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
@@ -95,10 +95,9 @@ Deno.serve(async (req) => {
       text = await file.text();
     }
 
-    // 텍스트 클리닝: 비정상적인 바이너리 문자 및 제어 문자 제거
+    // 텍스트 클리닝: 비정상적인 바이너리 문자 및 제어 문자 제거 (정규식 강화)
+    // 탭(\t), 줄바꿈(\n, \r)을 제외한 모든 제어 문자 제거
     text = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, "");
-
-    console.log(`Extracted text preview (first 200 chars): ${text.substring(0, 200)}`);
 
     // Parse the data - handle different line endings and trim each line
     const lines = text.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
@@ -107,18 +106,19 @@ Deno.serve(async (req) => {
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      // 주석이거나 파이프가 아예 없는 줄은 무시 (노이즈 방지)
+      // 주석이거나 파이프가 아예 없는 줄(노이즈)은 무시
       if (!line || line.startsWith('#') || !line.includes('|')) continue;
 
       const parts = line.split('|').map(p => p.trim());
 
-      // 첫 번째 파트가 숫자로 시작하는지 확인 (기본적인 유효성 검사)
+      // 첫 번째 파트(번호) 유효성 검사: 숫자로 시작해야 함
       const itemNumberMatch = parts[0].match(/^\d+/);
       if (!itemNumberMatch) {
-        // 노이즈가 심한 줄은 무시하고, 형식이 명확히 틀린 줄만 에러 기록
-        if (parts[0].length < 50 && !/[\uFFFD]/.test(parts[0])) {
-          parseErrors.push(`Line ${i + 1}: 항목 번호는 숫자로 시작해야 합니다 (값: "${parts[0].substring(0, 20)}")`);
+        // 노이즈가 명백한 줄(바이너리 깨짐 문자가 포함됨)은 에러 목록에 넣지 않고 무시
+        if (parts[0].length > 40 || /[\uFFFD]/.test(parts[0])) {
+          continue;
         }
+        parseErrors.push(`[Line ${i + 1}] 번호 형식 오류: "${parts[0].substring(0, 15)}..."`);
         continue;
       }
 
@@ -131,41 +131,42 @@ Deno.serve(async (req) => {
           comparison_item: parts[2] || '',
           salesforce_feature: parts[3] || '',
           servicenow_feature: parts[4] || '',
-          source: parts[5] || ''
+          source: (parts[5] || '').substring(0, 255)
         });
-      } else if (parts.length > 1) {
-        parseErrors.push(`Line ${i + 1}: 필드 부족 (예상: 5-6, 실제: ${parts.length})`);
+      }
+      // 필드가 부족한 줄 중 유효해 보이는 것만 에러 표시
+      else if (parts.length > 1 && parts[0].length < 10) {
+        parseErrors.push(`[Line ${i + 1}] 필드 부족 (필수 5개, 현재 ${parts.length}개)`);
       }
     }
 
     if (items.length === 0) {
+      console.log("No valid items found. Sample from first 3 lines:", lines.slice(0, 3));
       return new Response(
         JSON.stringify({
-          error: '파일에서 유효한 데이터를 찾을 수 없습니다.',
+          error: '유효한 데이터를 찾을 수 없습니다.',
           details: parseErrors.slice(0, 10),
-          hint: '기대 형식: 번호|카테고리|비교항목|Salesforce특징|ServiceNow특징|출처'
+          hint: '기대 형식: 번호|카테고리|비교항목|Salesforce|ServiceNow|출처'
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Parsed ${items.length} items from file`);
+    console.log(`Successfully parsed ${items.length} items.`);
 
-    // Insert items into database (upsert to handle duplicates)
+    // 데이터베이스 작업
     let inserted = 0;
     let updated = 0;
     const insertErrors: string[] = [];
 
     for (const item of items) {
-      // Check if item exists
       const { data: existing } = await supabase
         .from('comparisons')
         .select('id')
         .eq('item_number', item.item_number)
-        .single();
+        .maybeSingle();
 
       if (existing) {
-        // Update existing
         const { error: updateError } = await supabase
           .from('comparisons')
           .update({
@@ -177,31 +178,22 @@ Deno.serve(async (req) => {
           })
           .eq('item_number', item.item_number);
 
-        if (updateError) {
-          insertErrors.push(`Item ${item.item_number}: ${updateError.message}`);
-        } else {
-          updated++;
-        }
+        if (updateError) insertErrors.push(`ID ${item.item_number}: ${updateError.message}`);
+        else updated++;
       } else {
-        // Insert new
         const { error: insertError } = await supabase
           .from('comparisons')
           .insert(item);
 
-        if (insertError) {
-          insertErrors.push(`Item ${item.item_number}: ${insertError.message}`);
-        } else {
-          inserted++;
-        }
+        if (insertError) insertErrors.push(`ID ${item.item_number}: ${insertError.message}`);
+        else inserted++;
       }
     }
-
-    console.log(`Completed: ${inserted} inserted, ${updated} updated, ${insertErrors.length} errors`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `처리 완료: ${inserted}개 추가, ${updated}개 업데이트`,
+        message: `${inserted}개 추가, ${updated}개 업데이트 완료`,
         inserted,
         updated,
         total: items.length,
@@ -212,10 +204,9 @@ Deno.serve(async (req) => {
     );
 
   } catch (error: any) {
-    const errorMessage = error.message || 'Internal server error';
-    console.error('Error processing PDF:', error);
+    console.error('Core Error:', error);
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: error.message || 'Unknown server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
